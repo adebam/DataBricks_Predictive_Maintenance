@@ -1,0 +1,820 @@
+{
+  "datasets": [
+    {
+      "name": "64d38315",
+      "displayName": "gold_data_historical_stratified",
+      "config": {
+        "version": "1.1",
+        "source": "predictivemaintenancecatalog.gold_data.gold_data_historical_stratified",
+        "dimensions": [
+          {
+            "expr": "source.* EXCEPT (failure_mode)"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ada31947",
+      "displayName": "gold_failure_mode_summary",
+      "config": {
+        "version": "1.1",
+        "source": "predictivemaintenancecatalog.gold_data.gold_failure_mode_summary",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2c48e0da",
+      "displayName": "machine_type_failure_rate_summary",
+      "config": {
+        "version": "1.1",
+        "source": "predictivemaintenancecatalog.gold_data.machine_type_failure_rate_summary",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "46fb03c0",
+      "displayName": "joined",
+      "config": {
+        "version": "1.1",
+        "source": "predictivemaintenancecatalog.gold_data.joined",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "b0ab5482",
+      "displayName": "events",
+      "config": {
+        "version": "1.1",
+        "source": "predictivemaintenancecatalog.gold_data.events",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          },
+          {
+            "name": "total_count",
+            "expr": "COUNT(*) OVER ()"
+          }
+        ],
+        "measures": [
+          {
+            "name": "Total_Failure_Events",
+            "expr": "COUNT(*)",
+            "displayName": "Total Failure Events",
+            "window": [
+              {
+                "order": "failure_mode",
+                "range": "all",
+                "semiadditive": "last"
+              }
+            ]
+          },
+          {
+            "name": "Failure_Mode_Percentage",
+            "expr": "ROUND(\n    100.0 * COUNT(*) /\n    NULLIF(MEASURE(Total_Failure_Events), 0),\n    2\n)",
+            "displayName": "Failure Mode Percentage"
+          }
+        ]
+      }
+    },
+    {
+      "name": "1297f748",
+      "displayName": "failure_events_dashboard",
+      "queryLines": [
+        "SELECT\n",
+        "    UDI,\n",
+        "    Type,\n",
+        "    failure_mode\n",
+        "FROM predictivemaintenancecatalog.gold_data.events"
+      ]
+    }
+  ],
+  "relationshipGraphs": [
+    {
+      "sources": [
+        {
+          "name": "gold_data_historical_stratified",
+          "datasetName": "64d38315"
+        },
+        {
+          "name": "gold_failure_mode_summary",
+          "datasetName": "ada31947"
+        },
+        {
+          "name": "machine_type_failure_rate_summary",
+          "datasetName": "2c48e0da"
+        },
+        {
+          "name": "joined",
+          "datasetName": "46fb03c0"
+        },
+        {
+          "name": "events",
+          "datasetName": "b0ab5482"
+        },
+        {
+          "name": "Untitled_dataset",
+          "datasetName": "1297f748"
+        }
+      ],
+      "relationships": [
+        {
+          "name": "machine_type_failure_rate_summary_gold_data_historical_stratified",
+          "from": "machine_type_failure_rate_summary",
+          "to": "gold_data_historical_stratified",
+          "on": "`machine_type_failure_rate_summary`.`Type` = `gold_data_historical_stratified`.`Type`",
+          "cardinality": "CARDINALITY_ONE_TO_MANY"
+        },
+        {
+          "name": "events_gold_data_historical_stratified",
+          "from": "events",
+          "to": "gold_data_historical_stratified",
+          "on": "`events`.`UDI` = `gold_data_historical_stratified`.`UDI`",
+          "cardinality": "CARDINALITY_MANY_TO_ONE"
+        },
+        {
+          "name": "gold_failure_mode_summary_events",
+          "from": "gold_failure_mode_summary",
+          "to": "events",
+          "on": "`gold_failure_mode_summary`.`failure_mode` = `events`.`failure_mode`",
+          "cardinality": "CARDINALITY_ONE_TO_MANY"
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "72420dc3",
+      "displayName": "Machine Health",
+      "layout": [
+        {
+          "widget": {
+            "name": "total-amount-of-machines",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "64d38315",
+                  "fields": [
+                    {
+                      "name": "count(Type)",
+                      "expression": "COUNT(`Type`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Total Amount of Machines",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(Type)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "total-amount-of-failures",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "64d38315",
+                  "fields": [
+                    {
+                      "name": "sum(Machine_failure)",
+                      "expression": "SUM(`Machine_failure`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Total Amount of Failures<br>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "style": {
+                "fontColor": {
+                  "dark": "#F80927"
+                }
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(Machine_failure)",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  },
+                  "style": {
+                    "rules": [
+                      {
+                        "condition": {
+                          "operator": ">="
+                        },
+                        "fontColor": {
+                          "themeColorType": "visualizationColors",
+                          "position": 4
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "product-type",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "gold_data_historical_stratified__Type",
+                      "expression": "`gold_data_historical_stratified`.`Type`"
+                    },
+                    {
+                      "name": "measure(gold_data_historical_stratified__count)",
+                      "expression": "MEASURE(`gold_data_historical_stratified`.`count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Product type",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "gold_data_historical_stratified__Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(gold_data_historical_stratified__count)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "gold_data_historical_stratified__Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "total-failure-rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "64d38315",
+                  "fields": [
+                    {
+                      "name": "avg(Machine_failure)",
+                      "expression": "AVG(`Machine_failure`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Total Failure Rate",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(Machine_failure)",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "895d653c",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "machine_type_failure_rate_summary__Type",
+                      "expression": "`machine_type_failure_rate_summary`.`Type`"
+                    },
+                    {
+                      "name": "machine_type_failure_rate_summary__Machine_type_Failure_Rate_%",
+                      "expression": "`machine_type_failure_rate_summary`.`Machine_type_Failure_Rate_%`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Failure rate % by product type",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "machine_type_failure_rate_summary__Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "machine_type_failure_rate_summary__Machine_type_Failure_Rate_%",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "machine_type_failure_rate_summary__Type",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "705c077b",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "events__failure_mode",
+                      "expression": "`events`.`failure_mode`"
+                    },
+                    {
+                      "name": "measure(events__Failure_Mode_Percentage)",
+                      "expression": "MEASURE(`events`.`Failure_Mode_Percentage`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Distribution of Failure Mode",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "events__failure_mode",
+                  "axis": {
+                    "hideTitle": false
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(events__Failure_Mode_Percentage)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "events__failure_mode",
+                  "format": {
+                    "type": "alias",
+                    "mappings": [
+                      {
+                        "value": "HDF",
+                        "alias": "Heat Dissipation Failure"
+                      },
+                      {
+                        "value": "TWF",
+                        "alias": "Tool Wear Failure"
+                      },
+                      {
+                        "value": "PWF",
+                        "alias": "Power Failure"
+                      },
+                      {
+                        "value": "OSF",
+                        "alias": "Overstrain Failure"
+                      },
+                      {
+                        "value": "RNF",
+                        "alias": "Random Failure"
+                      }
+                    ]
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "distribution-of-failure-model",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "fields": [
+                    {
+                      "name": "events__failure_mode",
+                      "expression": "`events`.`failure_mode`"
+                    },
+                    {
+                      "name": "count(events__UDI)",
+                      "expression": "COUNT(`events`.`UDI`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Distribution of Failure Model",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "events__failure_mode",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "count(events__UDI)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "events__failure_mode",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "adfa71d7",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "e1",
+            "queries": [
+              {
+                "name": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1ca9b2e8c1f3d80ad3f6440ae2c37_Type",
+                "query": {
+                  "datasetName": "64d38315",
+                  "fields": [
+                    {
+                      "name": "Type",
+                      "expression": "`Type`"
+                    },
+                    {
+                      "name": "Type_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1cbed014c144c87e01f940e5305f1_Type",
+                "query": {
+                  "datasetName": "2c48e0da",
+                  "fields": [
+                    {
+                      "name": "Type",
+                      "expression": "`Type`"
+                    },
+                    {
+                      "name": "Type_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1cc8d4cb51608b5372d308387ea4e_Type",
+                "query": {
+                  "datasetName": "b0ab5482",
+                  "fields": [
+                    {
+                      "name": "Type",
+                      "expression": "`Type`"
+                    },
+                    {
+                      "name": "Type_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Type Filter",
+                  "fields": []
+                }
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "Type",
+                    "queryName": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1ca9b2e8c1f3d80ad3f6440ae2c37_Type"
+                  },
+                  {
+                    "fieldName": "Type",
+                    "queryName": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1cbed014c144c87e01f940e5305f1_Type"
+                  },
+                  {
+                    "fieldName": "Type",
+                    "queryName": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1cc8d4cb51608b5372d308387ea4e_Type"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "0a2ea39d",
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": []
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "214aa49e",
+            "queries": [
+              {
+                "name": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1ca9b2e8c1f3d80ad3f6440ae2c37_UDI",
+                "query": {
+                  "datasetName": "64d38315",
+                  "fields": [
+                    {
+                      "name": "min(UDI)",
+                      "expression": "MIN(`UDI`)"
+                    },
+                    {
+                      "name": "max(UDI)",
+                      "expression": "MAX(`UDI`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true
+              },
+              "widgetType": "range-slider",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "UDI",
+                    "queryName": "dashboards/01f1ca98819617f5a1695f2f121f0ba2/datasets/01f1ca9b2e8c1f3d80ad3f6440ae2c37_UDI"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
