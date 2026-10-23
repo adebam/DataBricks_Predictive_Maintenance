@@ -1,0 +1,2 @@
+# MLflow experiments are workspace objects, not files — Git cannot track them
+Predictive_Maintenance/00_Machine_failure_exp
