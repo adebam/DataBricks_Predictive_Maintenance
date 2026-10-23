@@ -37,8 +37,7 @@ Preprocessing was fitted on the training data and subsequently applied to valida
 ## Classification Metrics
 For a binary classification like in the machine failure analysis, the following examples serves as a way to understand the classifcation metrics.
 
-
-![Machine Condition Prediction Matrix.png](./Machine Condition Prediction Matrix.png "Machine Condition Prediction Matrix.png")
+![Machine Condition Prediction Matrix.png](./Machine%20Condition%20Prediction%20Matrix.png "Machine Condition Prediction Matrix.png")
 <p align="center"><i>Fig 2: Confusion Matrix </i></p>
 
 What each outcome means in practice
@@ -65,7 +64,7 @@ To summarize, a false negative is a missed failure, while a false positive is an
 ## Modeling Results
 ### Phase 1: Baseline screening. Original Features and Engineered Features
 
-![Validation Metric Comparison Scatterplots_1792768216048.png](./Validation Metric Comparison Scatterplots_1792768216048.png "Validation Metric Comparison Scatterplots_1792768216048.png")
+![Validation Metric Comparison Scatterplots_1792768216048.png](./Validation%20Metric%20Comparison%20Scatterplots_1792768216048.png "Validation Metric Comparison Scatterplots_1792768216048.png")
 <p align="center"><i>Fig 3: Original Features and engineered features baseline results </i></p>
 
 This figure summarizes the baseline screening results for models trained on both the original features and the engineered features. To make the comparison easier to interpret, the models built on the original feature set are shown in shades of red, while the models built on the engineered feature set are shown in shades of blue.
@@ -85,7 +84,7 @@ Across the scatterplots, the engineered-feature models generally appear in the s
 Out of all the best 3 models (sorted by f2), LightGBM with engineered features is the strongest baseline candidate.It offers the best balance between detecting failures and limiting false alarms among the baseline models.
 
 ### Phase 2: Hyperparmeter tuning of  Baseline models.
-![Validation Metric Comparison Dashboard.png](./Validation Metric Comparison Dashboard.png "Validation Metric Comparison Dashboard.png") 
+![Validation Metric Comparison Dashboard.png](./Validation%20Metric%20Comparison%20Dashboard.png "Validation Metric Comparison Dashboard.png") 
 <p align="center"><i>Fig 4: Hyperparmeter tuning of  Baseline models. </i></p>
 
 
@@ -105,7 +104,7 @@ For all the model pairs, the optimized models beats the baseline models in terms
 - **HistGradientBoosting**: Optimization produces the largest recall improvement, reducing missed failures from 10 to 7. However, false positives increase from 5 to 17.
 - **XGBoost**: Optimization improves F2 and recall, but false positives increase from 7 to 16.
 
-![Screenshot from 2026-10-23 11-45-41.png](./Screenshot from 2026-10-23 11-45-41.png "Screenshot from 2026-10-23 11-45-41.png")
+![Screenshot from 2026-10-23 11-45-41.png](./Screenshot%20from%202026-10-23%2011-45-41.png "Screenshot from 2026-10-23 11-45-41.png")
 
 ### Phase 3: Decision Threshold Optimization
 
@@ -122,8 +121,6 @@ Given the importance of detecting machine failures, the proposed selection strat
 
 ![image_1792793106099.png](./image_1792793106099.png "image_1792793106099.png")
 <p align="center"><i>Fig 5: Original Features Optimization using Threshold. </i></p>
-
-
 
 
 ![image_1792793408025.png](./image_1792793408025.png "image_1792793408025.png")
