@@ -164,7 +164,13 @@ Second, threshold optimization is performed to achieve a minimum recall target o
 
 These results are not contradictory. The first comparison prioritizes recall at the default threshold, whereas the second prioritizes minimizing false positives after satisfying the required recall target. Consequently, the model preferred at the default threshold is not necessarily the model that offers the best operational performance after threshold optimization.
 
-Going forward, **engineered-feature HistGradientBoosting baseline**  will be deployed. 
+Although maximizing recall would reduce the number of missed machine failures, it can also generate a substantially higher number of false-positive alerts. In this project, the objective is not to maximize recall at any cost, but to achieve a minimum recall target of 90% while minimizing unnecessary maintenance alerts.
+
+For example, the original-feature XGBoost optimized model achieves 94.44% recall, detecting 51 of the 54 actual failures, but generates 122 false positives. In comparison, the engineered-feature HistGradientBoosting baseline achieves 90.74% recall, detecting 49 failures, with only 25 false positives.
+
+The higher-recall model therefore detects just two additional failures at the cost of 97 additional false alarms. This illustrates why the selection strategy prioritizes the fewest false positives among candidates that meet the 90% recall requirement, rather than automatically selecting the model with the highest recall.
+
+Going forward, **engineered-feature HistGradientBoosting baseline**  will be used to evaluate the test data. 
 
 
 
