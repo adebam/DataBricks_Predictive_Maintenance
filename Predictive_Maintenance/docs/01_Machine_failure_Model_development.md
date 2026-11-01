@@ -117,10 +117,10 @@ A decision threshold is the probability cutoff used to convert a model's predict
 Rather than relying on the default threshold of 0.5, different thresholds were evaluated on the validation set to improve failure detection. Lowering the threshold generally increases recall by identifying more potential failures, but can also increase false alarms. Since missing a machine failure can be costly, threshold selection prioritized high recall while balancing precision and the F2 score. The selected threshold was recorded for each model alongside its validation metrics in MLflow.
 
 #### How the Decision Threshold Was Selected
-![image Oct 23, 2026, 06_37_00 PM_1792798860276.png](./image Oct 23, 2026, 06_37_00 PM_1792798860276.png "image Oct 23, 2026, 06_37_00 PM_1792798860276.png")
+![image Oct 23, 2026, 06_37_00 PM_1792798860276.png](./image%20Oct%2023,%202026,%2006_37_00%20PM_1792798860276.png "image Oct 23, 2026, 06_37_00 PM_1792798860276.png")
 <p align="center"><i>Fig 5: Original Features Optimization using Threshold. </i></p>
 
-![Oct 23, 2026, 06_37_33 PM_1792798872194.png](./Oct 23, 2026, 06_37_33 PM_1792798872194.png "Oct 23, 2026, 06_37_33 PM_1792798872194.png")
+![Oct 23, 2026, 06_37_33 PM_1792798872194.png](./Oct%2023,%202026,%2006_37_33%20PM_1792798872194.png "Oct 23, 2026, 06_37_33 PM_1792798872194.png")
 <p align="center"><i>Fig 6:Engineered Features Optimization using Threshold. </i></p>
  
  In the plots below we are only interested in models in the pink area.
