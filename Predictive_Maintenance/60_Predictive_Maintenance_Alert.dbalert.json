@@ -1,0 +1,60 @@
+{
+  "custom_summary": "Predictive Maintenance — Drift Detection Alert",
+  "evaluation": {
+    "source": {
+      "name": "psi",
+      "display": "psi",
+      "aggregation": "AGGREGATION_UNSPECIFIED"
+    },
+    "comparison_operator": "GREATER_THAN",
+    "threshold": {
+      "value": {
+        "double_value": 0.1
+      }
+    },
+    "notification": {
+      "notify_on_ok": false
+    }
+  },
+  "schedule": {
+    "quartz_cron_schedule": "51 53/10 * * * ?",
+    "timezone_id": "America/Chicago"
+  },
+  "query_lines": [
+    "",
+    "SELECT",
+    "    feature,",
+    "    severity,",
+    "    ROUND(psi, 4) AS psi,",
+    "    ks_pvalue,",
+    "    recommended_action,",
+    "    event_timestamp",
+    "",
+    "FROM predictivemaintenancecatalog.gold_data.prediction_monitoring_drift_alert_events",
+    "",
+    "WHERE notification_required = TRUE",
+    "  AND notification_status = 'PENDING'",
+    "",
+    "UNION ALL",
+    "",
+    "SELECT",
+    "    '(no pending drift events)' AS feature,",
+    "    'NONE' AS severity,",
+    "    0.0 AS psi,",
+    "    NULL AS ks_pvalue,",
+    "    'No action required' AS recommended_action,",
+    "    current_timestamp() AS event_timestamp",
+    "",
+    "WHERE NOT EXISTS (",
+    "    SELECT 1",
+    "    FROM predictivemaintenancecatalog.gold_data.prediction_monitoring_drift_alert_events",
+    "    WHERE notification_required = TRUE",
+    "      AND notification_status = 'PENDING'",
+    ")",
+    "",
+    "ORDER BY psi DESC;"
+  ],
+  "custom_description_lines": [
+    "Your predictive maintenance monitoring system has detected feature distribution changes.<br><br>Drift events requiring investigation:<br><br>{{QUERY_RESULT_TABLE}}<br><br>Please investigate the affected features, operating conditions and potential model impact."
+  ]
+}

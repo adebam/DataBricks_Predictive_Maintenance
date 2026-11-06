@@ -1,0 +1,10 @@
+dash>=3.2
+plotly>=6.0
+pandas>=2.2
+numpy>=1.26
+databricks-sql-connector>=4.0
+databricks-sdk>=0.18
+python-dotenv>=1.0
+cachetools>=5.5
+gunicorn>=23.0
+pytest>=8.0
