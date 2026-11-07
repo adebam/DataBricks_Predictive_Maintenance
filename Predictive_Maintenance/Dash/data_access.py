@@ -38,6 +38,8 @@ def query_df(query: str) -> pd.DataFrame:
                 host=f"https://{settings.databricks_host}",
                 client_id=settings.databricks_client_id,
                 client_secret=settings.databricks_client_secret,
+                auth_type="oauth-m2m",
+                scopes="sql",
             )
             return oauth_service_principal(config)
 
