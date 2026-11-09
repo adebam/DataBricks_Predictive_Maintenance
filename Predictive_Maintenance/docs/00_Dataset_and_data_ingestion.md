@@ -98,7 +98,7 @@ The project follows the Bronze, Silver, and Gold Medallion Architecture in Datab
 ![image_1792756939880.png](./image_1792756939880.png "image_1792756939880.png")
 <p align="center"><i>Fig 3: Databricks Medallion Architecture</i></p>
 
-###Bronze Layer — Raw Data Ingestion
+### Bronze Layer — Raw Data Ingestion
 
 The Bronze layer is the landing area for the source machine data.
 
@@ -114,13 +114,13 @@ Its responsibilities include:
 
 Pipeline metadata, such as ingestion timestamps and source-file information, can be incorporated to improve traceability.
 
-###Silver Layer — Data Cleaning and Validation
+### Silver Layer — Data Cleaning and Validation
 
 The Silver layer prepares the ingested data for reliable analysis and modeling.
 
 The workflow includes schema and data-type checks, data quality validation, and consistent preparation of the machine operating variables. The same transformation logic should be applied to historical and subsequently ingested records to prevent discrepancies between training and inference data.
 
-###Gold Layer — Analytics and Modeling
+### Gold Layer — Analytics and Modeling
 
 The Gold layer contains curated datasets for downstream consumption.
 
@@ -140,7 +140,7 @@ The Gold layer provides a common analytical foundation for both the dashboard an
 
 ### Simulated Streaming Workflow
 
-After the historical pipeline and model have been established, the remaining 2,000 records will be introduced in batches to simulate incoming machine data.
+After the historical pipeline and model have been established, the remaining 2,000 records will be introduced in batches to simulate incoming machine data. Also any other data will be streamed using this pipeline.
 
 The intended workflow is:
 

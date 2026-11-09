@@ -170,7 +170,18 @@ For example, the original-feature XGBoost optimized model achieves 94.44% recall
 
 The higher-recall model therefore detects just two additional failures at the cost of 97 additional false alarms. This illustrates why the selection strategy prioritizes the fewest false positives among candidates that meet the 90% recall requirement, rather than automatically selecting the model with the highest recall.
 
-Going forward, **engineered-feature HistGradientBoosting baseline**  will be used to evaluate the test data. 
+Going forward, **engineered-feature HistGradientBoosting baseline** with a threshold of 0.0475 will be used to evaluate the test data. 
+
+## Performance on the Test Data set
+To test the true perfomance of the chosen model, the 2000 records that was held-out was used. 
+
+
+| Dataset | Feature Set | Model | Threshold | Recall | Precision | F2 Score | TP | FN | FP | TN | Alert Rate |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Validation** | Engineered | HistGradientBoosting — Baseline | 0.004751 | 90.74% | 66.22% | 0.8448 | 49 | 5 | 25 | 1,521 | 4.63% |
+| **Test** | Engineered | HistGradientBoosting — Baseline | 0.004751 | 86.76% | 65.56% | 0.8149 | 59 | 9 | 31 | 1,901 | 4.50% |
+
+The test results shows a slight degragation from the validation results, but overall the result is within acceptable limits and range.
 
 
 
