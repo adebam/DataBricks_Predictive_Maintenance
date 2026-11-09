@@ -3,6 +3,25 @@
 
 The predictive maintenance project implements an event-triggered data pipeline using **Databricks Lakeflow Jobs, Apache Spark Structured Streaming, Delta Lake, Unity Catalog, and MLflow**.
 
+
+### Technology Stack and Responsibilities
+
+| Technology | Role | Implementation |
+|---|---|---|
+| **Databricks Lakeflow Jobs** | Workflow orchestration | Coordinates event-triggered CSV ingestion and sequential Bronze → Silver → Gold → Prediction processing. |
+| **Apache Spark Structured Streaming** | Incremental processing engine | Processes newly available records using `readStream`, `writeStream`, and persistent checkpoints. |
+| **Delta Lake** | Transactional storage layer | Stores landing, Bronze, Silver, Gold, and prediction datasets as Delta tables. |
+| **Unity Catalog** | Data governance | Organizes and governs tables, volumes, and model assets through centralized access controls and lineage. |
+| **MLflow** | Machine learning lifecycle management | Tracks experiments, stores trained models, and supports model loading for incremental inference. |
+| **Databricks Auto Loader** | Incremental file ingestion | Detects and ingests new CSV files using the `cloudFiles` source. |
+
+These technologies operate together to provide an event-driven data engineering and machine learning inference pipeline.
+
+Lakeflow Jobs manages workflow execution, Spark Structured Streaming processes incoming data, Delta Lake provides reliable storage, Unity Catalog governs data assets, and MLflow manages the trained machine learning model used for inference.
+
+
+
+
 The pipeline simulates incoming machine sensor data by introducing CSV files in batches. New records are automatically ingested, validated, transformed into model-ready features, and scored using a previously trained machine learning model (**engineered-feature HistGradientBoosting baseline with a threshold of 0.004751**).
 
 The architecture follows the **Medallion Architecture (Bronze → Silver → Gold)** to separate raw ingestion, data-quality validation, feature engineering, and machine learning inference. Before the Medallion Architecture, a seperate landing area was created to land raw csv files using autoloader
