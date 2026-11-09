@@ -140,11 +140,11 @@ The Gold layer provides a common analytical foundation for both the dashboard an
 
 ### Simulated Streaming Workflow
 
-After the historical pipeline and model have been established, the remaining 2,000 records will be introduced in batches to simulate incoming machine data. Also any other data will be streamed using this pipeline.
+After the historical pipeline and model have been established, the remaining 2,000 records will be introduced in batches to simulate incoming machine data. Also any additional data will be streamed using this pipeline.
 
 The intended workflow is:
 
-1. Ingest incoming records into Bronze.
+1. Ingest incoming records into a landing zone and from there into the Bronze layer.
 
 2. Apply the same Silver transformations and data quality checks.
 
