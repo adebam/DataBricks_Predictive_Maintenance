@@ -1,0 +1,25 @@
+
+name: AWS OIDC Authentication Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  test-aws-auth:
+    name: Verify AWS authentication
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::409400548716:role/GitHubActions-PMDash-Deploy
+          aws-region: us-east-1
+          role-session-name: github-oidc-test
+          allowed-account-ids: '409400548716'
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
