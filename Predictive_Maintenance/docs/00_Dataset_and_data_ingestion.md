@@ -54,11 +54,11 @@ This imbalance has important implications for model development. A classifier ca
 
 The modeling workflow therefore evaluates the ability to identify minority-class failures rather than relying on accuracy alone.
 
-![image_1792754112154.png](./image_1792754112154.png "image_1792754112154.png")
+![image_1792754112154.png](./pics/image_1792754112154.png "image_1792754112154.png")
 <p align="center"><i>Fig 1: 271 failed and 7729 are healthy</i></p>
 
 
-![image_1792754286393.png](./image_1792754286393.png "image_1792754286393.png")
+![image_1792754286393.png](./pics/image_1792754286393.png "image_1792754286393.png")
 <p align="center"><i>Fig 2: Failure mode distribution. Log scale for ease of comparison</i></p>
 
 
@@ -95,7 +95,7 @@ The failure-mode distribution chart therefore counts mutually exclusive mode com
 
 The project follows the Bronze, Silver, and Gold Medallion Architecture in Databricks. The objective is to separate raw data ingestion from data preparation and downstream analytical use.
 
-![image_1792756939880.png](./image_1792756939880.png "image_1792756939880.png")
+![image_1792756939880.png](./pics/image_1792756939880.png "image_1792756939880.png")
 <p align="center"><i>Fig 3: Databricks Medallion Architecture</i></p>
 
 ### Bronze Layer — Raw Data Ingestion
@@ -203,13 +203,14 @@ Further feature selection and importance analysis will help determine which addi
 The most important finding is that machine failure is a minority-class outcome. This requires explicit attention to recall, precision, and alert volume during model evaluation.
 
 The exploratory analysis also provides a foundation for investigating how temperature, rotational speed, torque, tool wear, and machine type relate to failure risk.
-![image_1792757787207.png](./image_1792757787207.png "image_1792757787207.png")
+![image_1792757787207.png](./pics/image_1792757787207.png "image_1792757787207.png")
 <p align="center"><i>Fig 4: Box plot showing what affects machine failure</i></p>
+
 The boxplots show clear differences between failed and non-failed machines. Failed machines generally exhibit higher air and process temperatures, higher torque, greater tool wear, and higher mechanical power. They also tend to have lower rotational speeds and smaller temperature differences between process and ambient air.
 
 The engineered interaction features (Torque_wear, Speed_wear, and Power_wear) also show higher median values among failed machines, suggesting they may help capture combinations of operating load and accumulated wear associated with failure. However, the distributions overlap considerably, indicating that no single feature is sufficient to reliably distinguish failed machines from healthy ones. These findings support using multiple features together in the classification models.
 
-![image_1792758147176.png](./image_1792758147176.png "image_1792758147176.png")
+![image_1792758147176.png](./pics/image_1792758147176.png "image_1792758147176.png")
 <p align="center"><i>Fig 5: PairPlot</i></p>
 
 The pairplot shows the distributions and pairwise relationships of the original and engineered features, colored by Machine_failure. Because machine failures are much less frequent than non-failures, the failed machines are harder to see clearly in the scatterplots and histograms. Even so, there are signs that failed machines tend to appear more often at higher torque, higher tool wear, and higher engineered interaction features such as Torque_wear, Speed_wear, and Power_wear. To see the failed machines more clearly, it is better to make the plot on a balanced sample (all failures plus an equal number of non-failures), or to create targeted plots such as boxplots, violin plots, or scatterplots using only the failure class versus a sample of healthy machines. That will make the failure patterns much easier to interpret visually.

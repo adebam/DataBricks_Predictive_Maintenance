@@ -23,7 +23,7 @@ The workflow for the modeling is described below.
 
 Since we wanted to check if the engineered features made a difference, the engineered features was compared to the original features
 
-![image_1792759239529.png](./image_1792759239529.png "image_1792759239529.png")
+![image_1792759239529.png](./pics/image_1792759239529.png "image_1792759239529.png")
 <p align="center"><i>Fig 1: Overall workflow </i></p>
 
 ## Preprocessing Pipeline and Data Transformation
@@ -37,7 +37,7 @@ Preprocessing was fitted on the training data and subsequently applied to valida
 ## Classification Metrics
 For a binary classification like in the machine failure analysis, the following examples serves as a way to understand the classifcation metrics.
 
-![Machine Condition Prediction Matrix.png](./Machine%20Condition%20Prediction%20Matrix.png "Machine Condition Prediction Matrix.png")
+![Machine Condition Prediction Matrix.png](./pics/Machine%20Condition%20Prediction%20Matrix.png "Machine Condition Prediction Matrix.png")
 <p align="center"><i>Fig 2: Confusion Matrix </i></p>
 
 What each outcome means in practice
@@ -65,7 +65,7 @@ To summarize, a false negative is a missed failure, while a false positive is an
 ## Modeling Results
 ### Phase 1: Baseline screening. Original Features and Engineered Features
 
-![Validation Metric Comparison Scatterplots_1792768216048.png](./Validation%20Metric%20Comparison%20Scatterplots_1792768216048.png "Validation Metric Comparison Scatterplots_1792768216048.png")
+![Validation Metric Comparison Scatterplots_1792768216048.png](./pics/Validation%20Metric%20Comparison%20Scatterplots_1792768216048.png "Validation Metric Comparison Scatterplots_1792768216048.png")
 <p align="center"><i>Fig 3: Original Features and engineered features baseline results </i></p>
 
 This figure summarizes the baseline screening results for models trained on both the original features and the engineered features. To make the comparison easier to interpret, the models built on the original feature set are shown in shades of red, while the models built on the engineered feature set are shown in shades of blue.
@@ -86,7 +86,7 @@ Across the scatterplots, the engineered-feature models generally appear in the s
 Out of all the best 3 models (sorted by f2), LightGBM with engineered features is the strongest baseline candidate.It offers the best balance between detecting failures and limiting false alarms among the baseline models.
 
 ### Phase 2: Hyperparmeter tuning of  Baseline models.
-![Validation Metric Comparison Dashboard.png](./Validation%20Metric%20Comparison%20Dashboard.png "Validation Metric Comparison Dashboard.png") 
+![Validation Metric Comparison Dashboard.png](./pics/Validation%20Metric%20Comparison%20Dashboard.png "Validation Metric Comparison Dashboard.png") 
 <p align="center"><i>Fig 4: Hyperparmeter tuning of  Baseline models. </i></p>
 
 
@@ -106,7 +106,7 @@ For all the model pairs in the table below, the optimized models beats the basel
 - **HistGradientBoosting**: Optimization produces the largest recall improvement, reducing missed failures from 10 to 7. However, false positives increase from 5 to 17.
 - **XGBoost**: Optimization improves F2 and recall, but false positives increase from 7 to 16.
 
-![Screenshot from 2026-10-23 11-45-41.png](./Screenshot%20from%202026-10-23%2011-45-41.png "Screenshot from 2026-10-23 11-45-41.png")
+![Screenshot from 2026-10-23 11-45-41.png](./pics/Screenshot%20from%202026-10-23%2011-45-41.png "Screenshot from 2026-10-23 11-45-41.png")
 <p align="center"><i>Table 3: Baseline models vs optimized models</i></p>
 
 ### Phase 3: Decision Threshold Optimization
@@ -117,10 +117,10 @@ A decision threshold is the probability cutoff used to convert a model's predict
 Rather than relying on the default threshold of 0.5, different thresholds were evaluated on the validation set to improve failure detection. Lowering the threshold generally increases recall by identifying more potential failures, but can also increase false alarms. Since missing a machine failure can be costly, threshold selection prioritized high recall while balancing precision and the F2 score. The selected threshold was recorded for each model alongside its validation metrics in MLflow.
 
 #### How the Decision Threshold Was Selected
-![image Oct 23, 2026, 06_37_00 PM_1792798860276.png](./image%20Oct%2023,%202026,%2006_37_00%20PM_1792798860276.png "image Oct 23, 2026, 06_37_00 PM_1792798860276.png")
+![image Oct 23, 2026, 06_37_00 PM_1792798860276.png](./pics/image%20Oct%2023,%202026,%2006_37_00%20PM_1792798860276.png "image Oct 23, 2026, 06_37_00 PM_1792798860276.png")
 <p align="center"><i>Fig 5: Original Features Optimization using Threshold. </i></p>
 
-![Oct 23, 2026, 06_37_33 PM_1792798872194.png](./Oct%2023,%202026,%2006_37_33%20PM_1792798872194.png "Oct 23, 2026, 06_37_33 PM_1792798872194.png")
+![Oct 23, 2026, 06_37_33 PM_1792798872194.png](./pics/Oct%2023,%202026,%2006_37_33%20PM_1792798872194.png "Oct 23, 2026, 06_37_33 PM_1792798872194.png")
 <p align="center"><i>Fig 6:Engineered Features Optimization using Threshold. </i></p>
  
  In the plots below we are only interested in models in the pink area.

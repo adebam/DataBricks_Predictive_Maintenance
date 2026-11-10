@@ -21,7 +21,6 @@ Lakeflow Jobs manages workflow execution, Spark Structured Streaming processes i
 
 
 
-
 The pipeline simulates incoming machine sensor data by introducing CSV files in batches. New records are automatically ingested, validated, transformed into model-ready features, and scored using a previously trained machine learning model (**engineered-feature HistGradientBoosting baseline with a threshold of 0.004751**).
 
 The architecture follows the **Medallion Architecture (Bronze → Silver → Gold)** to separate raw ingestion, data-quality validation, feature engineering, and machine learning inference. Before the Medallion Architecture, a seperate landing area was created to land raw csv files using autoloader
@@ -130,6 +129,9 @@ The Auto Loader is configured with:
 
 This design allows new CSV batches to be processed without manually restarting or executing the downstream notebooks.
 
+![auto_loader.png](../pics/auto_loader.png "auto_loader.png")
+<p align="center"><i>Fig 1: auto loader. A pipeline by itself. Not connected to the main lakeflow pipeline </i></p>
+
 ## 3. Job B — Main Lakeflow Processing Pipeline
 
 The main Lakeflow Job is triggered when the landing Delta table is updated.
@@ -230,6 +232,8 @@ The prediction table includes:
 The selected model uses an optimized classification threshold of approximately **0.004751**, established during validation.
 
 The ground-truth `Machine_failure` label is excluded from model inputs to prevent target leakage.
+![LakeflowProcessingPipeline.png](../pics/LakeflowProcessingPipeline.png "LakeflowProcessingPipeline.png")
+<p align="center"><i>Fig 12: Lakeflow Processing Pipeline.  </i></p>
 
 ## 4. Incremental Processing and Checkpointing
 
