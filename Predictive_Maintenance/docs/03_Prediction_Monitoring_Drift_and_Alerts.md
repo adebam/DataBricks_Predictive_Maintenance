@@ -83,17 +83,6 @@ The rolling-performance notebook also assigns a support status:
 
 Rolling snapshots are stored only when the latest window or its confusion-matrix values change. These metrics describe the most recent **1,000 records**, not a 1,000-minute or 1,000-day time interval.
 
-> **Scope:** Because the present simulation provides ground-truth labels, recall, precision, and F2 can be calculated. In production, these metrics would be delayed until actual failure outcomes became available.
-
-The overall, batch-level, and rolling classification metrics are calculated using known failure labels from the synthetic dataset.
-
-These metrics are generated after model inference by joining stored predictions with their corresponding actual outcomes using `UDI`.
-
-They are intended to evaluate model performance across successive data batches and identify potential performance degradation.
-
-Importantly, these metrics are not used to generate predictions, modify the selected classification threshold, or trigger operational alerts.
-
-In a real-world deployment, the same evaluations would only be possible after actual failure outcomes became available. Until then, operational monitoring relies on prediction statistics and feature drift measurements that do not require ground-truth labels.
 
 ## 2. Data Drift Monitoring
 
@@ -111,7 +100,7 @@ Detect whether incoming machine operating conditions have changed relative to th
 | **Incoming/current population** | `gold_data.streaming` | Accumulated incoming Gold records |
 | **Recent population** | Latest 1,000 rows from `gold_data.streaming` | Rolling drift window, ordered by `_gold_processed_at` and then `UDI` |
 
-The reference is intentionally fixed so subsequent monitoring windows can be compared consistently. It is **not** the 1,600-record validation split.
+The reference is intentionally fixed so subsequent monitoring windows can be compared consistently.
 
 The notebook monitors **11 model-input features**: one categorical (`Type`), five original numeric features, and five engineered numeric features.
 
@@ -131,11 +120,49 @@ The notebook monitors **11 model-input features**: one categorical (`Type`), fiv
 | **Population Stability Index (PSI)** | All 11 features | Quantifies differences between the historical and current feature distributions |
 | **Two-sample Kolmogorov–Smirnov (KS) test** | 10 numeric features | Measures the maximum difference between empirical cumulative distributions and reports a p-value |
 
-Numerical PSI uses approximately ten quantile-based bins derived from the historical reference data. Those same bin boundaries are used for incoming observations. Categorical PSI compares the distribution of `Type` values, including an `__OTHER__` bucket for previously unseen categories.
+
+#### Rolling Feature Drift Monitoring — Reference vs. Current Data
+
+Feature drift is monitored using the **Population Stability Index (PSI)** and **Kolmogorov–Smirnov (KS) test** to detect changes in machine operating conditions between historical and incoming data.
+
+Two populations are compared:
+
+| Population | Source Table | Records | Purpose |
+|---|---|---|---|
+| **Reference (Baseline)** | `gold_data.all_features` | 8,000 | Historical training and validation population used as the fixed drift baseline |
+| **Current (Streaming)** | `gold_data.streaming` | Latest 1,000 | Rolling window of recently processed machine observations |
+
+The reference population consists of the original 8,000 historical records (6,400 training and 1,600 validation). This population remains fixed to provide a consistent baseline for detecting distribution changes.
+
+The current population consists of the **latest 1,000 Gold records**, ordered by processing timestamp (`_gold_processed_at`) and `UDI`.
+
+As new machine records arrive, the rolling window advances, replacing older observations with newer ones.
+
+For each of the 11 monitored features (10 numerical and one categorical), the pipeline compares the current distribution against the historical baseline.
+
+#### PSI Drift Classification
+
+| PSI Value | Drift Severity | Interpretation |
+|---|---|---|
+| PSI < 0.10 | **Stable** | No substantial distribution change |
+| 0.10 ≤ PSI < 0.25 | **Moderate Drift** | Potential distribution shift requiring monitoring |
+| PSI ≥ 0.25 | **Significant Drift** | Substantial distribution shift requiring investigation |
+
+These thresholds are monitoring heuristics rather than universal statistical guarantees.
+
+The KS test provides an additional statistical comparison for numerical features.
+
+**Operational Significance:**
+
+Unlike model performance metrics such as recall, precision, and F2, feature drift monitoring does not require actual machine failure labels.
+
+This enables the system to monitor changes in incoming machine operating conditions even when actual equipment failure outcomes are not yet available.
+
+Significant drift can trigger automated alerts for investigation. However, detected feature drift does not necessarily imply that model prediction accuracy has deteriorated.
 
 For numeric features, a KS p-value below `0.05` is marked as statistically significant. KS is supplementary evidence; the **PSI threshold determines the severity category** in this implementation.
 
-### PSI drift thresholds
+#### PSI drift thresholds
 
 | PSI value | Internal PSI status | Alert severity | Interpretation |
 |---|---|---|---|
@@ -143,9 +170,54 @@ For numeric features, a KS p-value below `0.05` is marked as statistically signi
 | `0.10` to `< 0.25` | `MODERATE_DRIFT` | `WARNING` | Review distribution changes and monitor subsequent windows |
 | `>= 0.25` | `SIGNIFICANT_DRIFT` | `HIGH` | Investigate changes in data, sensors, operating conditions, and possible model impact |
 
+
 These cutoffs are **monitoring heuristics**, not guarantees of model degradation or formal statistical confidence levels.
 
-### Drift result tables
+#### PSI vs. KS Test
+| Property | PSI (Population Stability Index) | KS (Kolmogorov–Smirnov) Test |
+| :--- | :--- | :--- |
+| **Purpose** | Measures the magnitude of distribution change | Tests whether two distributions differ statistically |
+| **Output** | PSI score | KS statistic and p-value |
+| **Range** | 0 to infinity | KS statistic: 0 to 1; p-value: 0 to 1 |
+| **Interpretation** | Higher PSI = greater distribution change | Higher KS statistic = greater separation between distributions |
+| **Statistical significance** | No p-value or formal hypothesis test | p-value indicates statistical evidence against equal distributions |
+| **Affected by sample size** | Estimate depends on sample size and binning | p-value is strongly affected by sample size |
+Suppose we compare the distribution of `Torque_Nm` between your 8,000 historical records and the latest 1,000 streaming records.
+
+##### Illustrative Drift-Monitoring Result
+
+| Metric | Value | Interpretation |
+| :--- | :--- | :--- |
+| **PSI** | 0.27 | Significant drift |
+| **KS statistic** | 0.20 | Distribution separation |
+| **KS p-value** | 0.001 | Statistically significant |
+
+*> **Note:** Illustrative values, not the actual saved monitoring result.*
+
+###### Key Takeaways
+
+Here's what these values mean:
+- **PSI = 0.27:** The distribution has shifted enough to exceed your significant-drift threshold of 0.25.
+- **KS statistic = 0.20:** The maximum difference between the empirical cumulative distributions is 20 percentage points.
+- **KS p-value = 0.001:** Under the assumption that both samples come from the same distribution, a KS statistic at least this extreme would be unlikely.
+
+###### Which should be used?
+
+recommend  **PSI** as  primary alert severity indicator, supported by the **KS test**.
+
+They answer complementary questions:
+- **PSI:** How much has the distribution changed?
+- **KS statistic:** How far apart are the cumulative distributions?
+- **KS p-value:** Is there statistically significant evidence of a difference?
+
+###### Operational Caveat
+With 8,000 historical and 1,000 streaming observations, even relatively small distribution differences can produce statistically significant KS p-values. Also, consecutive rolling windows overlap, so their test results are not independent.
+
+That's why I prefer your current architecture, which uses PSI thresholds of **0.10** and **0.25** for operational severity rather than triggering alerts solely from KS p-values.
+
+> **In summary:** PSI is a drift-magnitude score, whereas the KS p-value measures statistical evidence of distribution differences.
+
+#### Drift result tables
 
 | Delta table | Purpose |
 |---|---|
@@ -155,7 +227,7 @@ These cutoffs are **monitoring heuristics**, not guarantees of model degradation
 
 The drift result tables store monitoring identifiers, feature names, PSI/KS metrics, severity labels, timestamps, and window metadata. Results are inserted by `monitoring_run_id` and `feature`, allowing repeated executions for the same snapshot to avoid duplicate metric rows.
 
-> **Window distinction:** Rolling prediction performance uses the latest 1,000 **labeled predictions**. Rolling feature drift uses the latest 1,000 **Gold observations**. They answer different questions and do not necessarily contain exactly the same records.
+> **Window distinction:** Rolling prediction performance uses the latest 1,000 **labeled predictions** (Determine whether the model is still predicting accurately). Rolling feature drift uses the latest 1,000 **Gold observations** (Determine whether incoming machine operating conditions are changing). They answer different questions and do not necessarily contain exactly the same records.
 
 ## 3. Drift Alert Management and Notification
 
