@@ -1,0 +1,51 @@
+
+name: Dash CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Predictive_Maintenance/Dash/**'
+      - '.github/workflows/dash-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'Predictive_Maintenance/Dash/**'
+      - '.github/workflows/dash-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test dashboard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Predictive_Maintenance/Dash
+    env:
+      DEMO_MODE: 'true'
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: Predictive_Maintenance/Dash/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip check
+
+      - name: Check Python syntax
+        run: python -m compileall -q app.py config.py data.py data_access.py demo_data.py snapshot.py tests
+
+      - name: Run pytest suite
+        run: python -m pytest -q tests
