@@ -35,8 +35,25 @@ All table names below belong to the `predictivemaintenancecatalog.gold_data` sch
 **Notebook:** `50_Prediction_Monitoring`
 
 ### Objective
-
 Evaluate classification performance as new **labeled** machine observations become available. Unlike feature-drift monitoring, performance metrics require the actual `Machine_failure` outcome to be known.
+
+Notebook 50 calculates classification performance metrics, including precision, recall, F2 score, true positives (TP), false positives (FP), false negatives (FN), and true negatives (TN).
+
+These metrics are calculated for the cumulative prediction population, individual ingestion batches, and rolling windows of the latest 1,000 labeled observations.
+
+Because the project uses a synthetic dataset with known `Machine_failure` labels, predicted outcomes can be compared directly against actual outcomes. This allows us to evaluate whether model performance changes as additional data is ingested.
+
+**However, these metrics are not currently integrated into the operational monitoring dashboard or automated alerting system.** They are calculated and stored in Databricks for retrospective evaluation and potential future use.
+
+In a real-world predictive maintenance system, actual machine failure outcomes are generally unavailable at prediction time. Consequently, operational monitoring focuses on metrics that do not require ground-truth labels, including:
+
+- Prediction volume and predicted failure rate.
+- Failure probability distributions.
+- Feature drift using PSI and KS statistics.
+- Automated drift detection and alerts.
+
+The retrospective performance calculations demonstrate how model accuracy could be monitored once verified failure outcomes become available. Future enhancements could incorporate delayed-label performance monitoring, performance degradation alerts, and automated model retraining.
+
 
 ### Data sources and processing
 
@@ -49,21 +66,6 @@ Evaluate classification performance as new **labeled** machine observations beco
 The notebook joins predictions to Gold on `UDI`, validates uniqueness and label completeness, and assigns each record to its CSV batch. Records without an inbox filename match are classified as `Other / Pre-CSV Data`.
 
 The combined records are **upserted** to `prediction_monitoring` using a Delta `MERGE` keyed by `UDI`. This avoids blindly appending the same machine prediction during repeated monitoring runs, provided each `UDI` is unique.
-
-### Classification metrics
-
-| Metric | Formula / definition | Operational interpretation |
-|---|---|---|
-| **TP** | Actual failure = 1, predicted = 1 | Correctly detected failures |
-| **FN** | Actual failure = 1, predicted = 0 | Missed failures |
-| **FP** | Actual failure = 0, predicted = 1 | False maintenance alerts |
-| **TN** | Actual failure = 0, predicted = 0 | Correct non-failure predictions |
-| **Precision** | `TP / (TP + FP)` | Fraction of failure alerts that correspond to failures |
-| **Recall** | `TP / (TP + FN)` | Fraction of actual failures identified |
-| **F2 score** | `5 × TP / (5 × TP + 4 × FN + FP)` | Recall-weighted classification score |
-| **Alert rate** | `(TP + FP) / Total records` | Fraction of records generating a predicted-failure alert |
-
-The primary modeling goal is high recall while keeping false-positive alerts manageable.
 
 ### Overall, batch-level, and rolling monitoring
 
@@ -82,6 +84,16 @@ The rolling-performance notebook also assigns a support status:
 Rolling snapshots are stored only when the latest window or its confusion-matrix values change. These metrics describe the most recent **1,000 records**, not a 1,000-minute or 1,000-day time interval.
 
 > **Scope:** Because the present simulation provides ground-truth labels, recall, precision, and F2 can be calculated. In production, these metrics would be delayed until actual failure outcomes became available.
+
+The overall, batch-level, and rolling classification metrics are calculated using known failure labels from the synthetic dataset.
+
+These metrics are generated after model inference by joining stored predictions with their corresponding actual outcomes using `UDI`.
+
+They are intended to evaluate model performance across successive data batches and identify potential performance degradation.
+
+Importantly, these metrics are not used to generate predictions, modify the selected classification threshold, or trigger operational alerts.
+
+In a real-world deployment, the same evaluations would only be possible after actual failure outcomes became available. Until then, operational monitoring relies on prediction statistics and feature drift measurements that do not require ground-truth labels.
 
 ## 2. Data Drift Monitoring
 
