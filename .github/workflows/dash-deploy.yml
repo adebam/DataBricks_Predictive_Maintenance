@@ -1,0 +1,239 @@
+
+name: Dash CD - Deploy to EC2
+
+on:
+  workflow_run:
+    workflows: ["Dash CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: pm-dash-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy verified Dash code
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      INSTANCE_ID: i-0b6ed98d8f6acb7ce
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
+
+    steps:
+      - name: Authenticate GitHub to AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::409400548716:role/GitHubActions-PMDash-Deploy
+          aws-region: us-east-1
+          allowed-account-ids: '409400548716'
+          role-session-name: pm-dash-deploy
+
+      - name: Deploy through SSM and check health
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]] || {
+            echo 'Invalid deploy SHA'
+            exit 1
+          }
+
+          cat > /tmp/pm-dash-remote.sh <<'REMOTE'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+
+          TARGET_SHA="$1"
+          REPO=/home/ubuntu/DataBricks_Predictive_Maintenance
+          DASH="$REPO/Predictive_Maintenance/Dash"
+          SERVICE=pm_dash
+          URL=http://127.0.0.1:8050/
+          PYTHON=/home/ubuntu/miniforge3/envs/pm_dash/bin/python
+
+          as_ubuntu() {
+            sudo -H -u ubuntu "$@"
+          }
+
+          healthy() {
+            curl --fail --silent --show-error \
+              --max-time 15 --output /dev/null "$URL"
+          }
+
+          wait_healthy() {
+            for attempt in $(seq 1 15); do
+              if systemctl is-active --quiet "$SERVICE" && healthy; then
+                return 0
+              fi
+              sleep 3
+            done
+            return 1
+          }
+
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]] || exit 2
+
+          [[ "$(as_ubuntu git -C "$REPO" branch --show-current)" == main ]] || {
+            echo 'EC2 checkout is not on main'
+            exit 1
+          }
+
+          [[ -z "$(as_ubuntu git -C "$REPO" status --porcelain)" ]] || {
+            echo 'EC2 checkout has local changes; refusing deployment'
+            exit 1
+          }
+
+          systemctl is-active --quiet "$SERVICE" && healthy || {
+            echo 'Existing Dash service is unhealthy; refusing deployment'
+            exit 1
+          }
+
+          PREVIOUS_SHA="$(as_ubuntu git -C "$REPO" rev-parse HEAD)"
+
+          as_ubuntu git -C "$REPO" fetch origin main
+
+          REMOTE_SHA="$(as_ubuntu git -C "$REPO" rev-parse origin/main)"
+
+          [[ "$REMOTE_SHA" == "$TARGET_SHA" ]] || {
+            echo 'A newer commit exists on main; refusing stale deployment'
+            exit 1
+          }
+
+          as_ubuntu git -C "$REPO" merge-base \
+            --is-ancestor "$PREVIOUS_SHA" "$TARGET_SHA" || {
+            echo 'Cannot fast-forward EC2 checkout; refusing deployment'
+            exit 1
+          }
+
+          if [[ "$PREVIOUS_SHA" == "$TARGET_SHA" ]]; then
+            echo 'Already deployed the tested commit; no restart necessary'
+            exit 0
+          fi
+
+          if [[ -n "$(as_ubuntu git -C "$REPO" diff --name-only \
+            "$PREVIOUS_SHA" "$TARGET_SHA" -- \
+            Predictive_Maintenance/Dash/requirements.txt)" ]]; then
+            echo 'Dependencies changed; use a reviewed environment update before deploying'
+            exit 1
+          fi
+
+          DASH_CHANGED=0
+
+          if [[ -n "$(as_ubuntu git -C "$REPO" diff --name-only \
+            "$PREVIOUS_SHA" "$TARGET_SHA" -- \
+            Predictive_Maintenance/Dash/)" ]]; then
+            DASH_CHANGED=1
+          fi
+
+          UPDATED=0
+
+          rollback() {
+            rc=$?
+            trap - EXIT
+
+            if [[ "$rc" -ne 0 && "$UPDATED" == 1 ]]; then
+              echo 'Deployment failed, attempting rollback to previous code'
+
+              as_ubuntu git -C "$REPO" reset --hard "$PREVIOUS_SHA" || true
+
+              systemctl restart "$SERVICE" || true
+
+              if wait_healthy; then
+                echo 'Previous application recovered'
+              else
+                echo 'ALERT: Rollback health check failed; manual intervention needed'
+              fi
+            fi
+
+            exit "$rc"
+          }
+
+          trap rollback EXIT
+
+          UPDATED=1
+          as_ubuntu git -C "$REPO" merge --ff-only "$TARGET_SHA"
+
+          if [[ "$DASH_CHANGED" == 0 ]]; then
+            echo 'Repository updated, but no Dash application files changed; skipping restart'
+            exit 0
+          fi
+
+          as_ubuntu "$PYTHON" -m compileall -q "$DASH"
+
+          systemctl restart "$SERVICE"
+
+          wait_healthy || {
+            echo 'New application failed health checks'
+            exit 1
+          }
+
+          echo "Deployment successful: $TARGET_SHA"
+          REMOTE
+
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+
+          script = Path('/tmp/pm-dash-remote.sh').read_bytes()
+          encoded = base64.b64encode(script).decode('ascii')
+          sha = os.environ['DEPLOY_SHA']
+
+          command = (
+              f"printf '%s' '{encoded}' | "
+              f"base64 -d | bash -s -- '{sha}'"
+          )
+
+          Path('/tmp/pm-dash-ssm-params.json').write_text(
+              json.dumps({'commands': [command]})
+          )
+          PY
+
+          COMMAND_ID="$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "Deploy validated Dash commit ${DEPLOY_SHA}" \
+            --timeout-seconds 600 \
+            --parameters file:///tmp/pm-dash-ssm-params.json \
+            --query 'Command.CommandId' \
+            --output text)"
+
+          echo "SSM command: $COMMAND_ID"
+
+          STATUS=Pending
+
+          for attempt in $(seq 1 120); do
+            STATUS="$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query 'Status' \
+              --output text 2>/dev/null || true)"
+
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut|Cancelling)
+                break
+                ;;
+            esac
+
+            sleep 5
+          done
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' \
+            --output json
+
+          [[ "$STATUS" == Success ]] || {
+            echo "Deployment ended with status $STATUS"
+            exit 1
+          }
