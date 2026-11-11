@@ -1,0 +1,13 @@
+resources:
+  jobs:
+    landing_to_bronze:
+      name: pm-landing-to-bronze
+      max_concurrent_runs: 1
+
+      tasks:
+        - task_key: landing_to_bronze
+          notebook_task:
+            notebook_path: ../Predictive_Maintenance/notebooks/30_Test_Data_Landing_Bronze.ipynb
+            base_parameters:
+              catalog: ${var.catalog}
+              starting_version: ""
