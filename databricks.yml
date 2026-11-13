@@ -13,7 +13,13 @@ targets:
   dev:
     mode: development
     default: true
+
     workspace:
       host: https://dbc-388b27bb-271a.cloud.databricks.com
+      root_path: /Workspace/Users/adebam@hotmail.com/.bundle/predictive_maintenance/dev
+
+    presets:
+      name_prefix: "[dev adebam] "
+
     variables:
       catalog: predictivemaintenance_dev
