@@ -10,4 +10,5 @@ resources:
             notebook_path: ../Predictive_Maintenance/notebooks/30_Test_Data_Landing_Bronze.ipynb
             base_parameters:
               catalog: ${var.catalog}
+              deployment_target: ${bundle.target}
               starting_version: ""

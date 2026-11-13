@@ -1,0 +1,40 @@
+
+# Define the resources Databricks Asset Bundles will manage
+resources:
+  # A collection of Databricks jobs
+  jobs:
+
+    # Job resource key
+    # Used by the CLI: databricks bundle run -t dev bronze_to_silver
+    bronze_to_silver:
+
+      # Job name displayed in the Databricks UI
+      name: pm-bronze-to-silver
+
+      # Prevent two runs of this job from executing simultaneously
+      max_concurrent_runs: 1
+
+      # Define the tasks that belong to this job
+      tasks:
+
+        # Unique identifier for this task within the job
+        # Later, other tasks can reference this using depends_on
+        - task_key: bronze_to_silver
+
+          # This task executes a Databricks notebook
+          notebook_task:
+
+            # Location of Notebook 31 relative to this YAML file
+            notebook_path: ../Predictive_Maintenance/notebooks/31_Test_data_Bronze_Silver.ipynb
+
+            # Parameters passed to the notebook at execution time
+            base_parameters:
+
+              # Catalog selected in databricks.yml
+              # dev  -> predictivemaintenance_dev
+              # prod -> predictivemaintenancecatalog (when configured)
+              catalog: ${var.catalog}
+
+              # Current Asset Bundle target, such as dev or prod
+              # Used by the notebook's environment safety check
+              deployment_target: ${bundle.target}
