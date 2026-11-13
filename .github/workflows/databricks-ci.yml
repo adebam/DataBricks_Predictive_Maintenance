@@ -1,5 +1,4 @@
-
-name: Databricks CI
+name: Predictive Maintenance - Databricks CI
 
 on:
   push:
@@ -32,9 +31,9 @@ permissions:
 
 jobs:
   test:
-    name: Test Databricks notebooks and bundle references
+    name: Pytest and DEV Bundle Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -56,3 +55,34 @@ jobs:
       - name: Run pytest
         run: |
           python -m pytest tests/ -v
+
+      # Skip Databricks authentication for pull requests
+      # originating from external forks, where secrets
+      # are not available.
+      - name: Install Databricks CLI
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: databricks/setup-cli@main
+        with:
+          version: '1.23.0'
+
+      - name: Verify Databricks authentication
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          DATABRICKS_AUTH_TYPE: oauth-m2m
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+        run: |
+          databricks auth describe
+          databricks workspace list / --output json > /dev/null
+          databricks jobs list --output json > /dev/null
+
+      - name: Validate Databricks DEV Asset Bundle
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          DATABRICKS_AUTH_TYPE: oauth-m2m
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+        run: |
+          databricks bundle validate -t dev
