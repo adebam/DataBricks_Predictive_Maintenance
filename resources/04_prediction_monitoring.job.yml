@@ -9,7 +9,7 @@ resources:
     prediction_monitoring:
 
       # Job name displayed in the Databricks UI
-      name: pm-prediction_monitoring
+      name: pm-prediction-monitoring
 
       # Prevent two runs of this job from executing simultaneously
       max_concurrent_runs: 1
