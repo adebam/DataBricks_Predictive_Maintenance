@@ -1,0 +1,43 @@
+
+# Define the resources Databricks Asset Bundles will manage
+resources:
+  # A collection of Databricks jobs
+  jobs:
+
+    # Job resource key
+    # Used by the CLI: databricks bundle run -t dev gold_to_mlflowprediction
+    gold_to_mlflowprediction:
+
+      # Job name displayed in the Databricks UI
+      name: pm-gold-to-mlflowprediction
+
+      # Prevent two runs of this job from executing simultaneously
+      max_concurrent_runs: 1
+
+      # Define the tasks that belong to this job
+      tasks:
+
+        # Unique identifier for this task within the job
+        # Later, other tasks can reference this using depends_on
+        - task_key: gold_to_mlflowprediction
+
+          # This task executes a Databricks notebook
+          notebook_task:
+
+            # Location of Notebook 33 relative to this YAML file
+            notebook_path: ../Predictive_Maintenance/notebooks/33_Test Data_Gold _MLflowPrediction.ipynb
+
+            # Parameters passed to the notebook at execution time
+            base_parameters:
+
+              # Catalog selected in databricks.yml
+              # dev  -> predictivemaintenance_dev
+              # prod -> predictivemaintenancecatalog (when configured)
+              catalog: ${var.catalog}
+
+              # Current Asset Bundle target, such as dev or prod
+              # Used by the notebook's environment safety check
+              deployment_target: ${bundle.target}
+              
+              # MLflow model used for inference
+              model_uri: "models:/m-2992a2dcaf454e7fb1968eca38e9ed19"
