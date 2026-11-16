@@ -19,6 +19,8 @@ targets:
 
     presets:
       name_prefix: "[dev adebam] "
+      tags:
+        dev: adebam
 
     variables:
       catalog: predictivemaintenance_dev

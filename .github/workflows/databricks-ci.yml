@@ -96,3 +96,29 @@ jobs:
           DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
         run: |
           databricks bundle summary --force-pull -t dev
+
+  verify-dev-plan:
+    name: Verify DEV Deployment Plan
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/databricks-bundles'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+        with:
+          version: '1.23.0'
+
+      - name: Plan DEV Asset Bundle (no deployment)
+        env:
+          DATABRICKS_AUTH_TYPE: oauth-m2m
+          DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+        run: |
+          databricks bundle plan -t dev
+          databricks bundle summary --force-pull -t dev
