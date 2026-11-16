@@ -1,8 +1,12 @@
+
 resources:
   jobs:
     landing_to_bronze:
       name: pm-landing-to-bronze
       max_concurrent_runs: 1
+
+      tags:
+        deployment_test: github-actions-cd
 
       tasks:
         - task_key: landing_to_bronze
@@ -12,3 +16,4 @@ resources:
               catalog: ${var.catalog}
               deployment_target: ${bundle.target}
               starting_version: ""
+
