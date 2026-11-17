@@ -1,0 +1,40 @@
+artifact_path: dbfs:/databricks/mlflow-tracking/3358912254446233/logged_models/m-2992a2dcaf454e7fb1968eca38e9ed19/artifacts
+databricks_runtime: client.6
+flavors:
+  python_function:
+    cloudpickle_version: 3.1.1
+    code: null
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pyfunc.model
+    python_model: python_model.pkl
+    python_version: 3.12.3
+    streamable: false
+is_signature_from_type_hint: false
+mlflow_version: 3.12.0
+model_id: m-2992a2dcaf454e7fb1968eca38e9ed19
+model_size_bytes: 737384
+model_uuid: m-2992a2dcaf454e7fb1968eca38e9ed19
+prompts: null
+run_id: b67ac006152449b1bc7a3d27bb1f9a68
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "string", "name": "Type", "required": true}, {"type": "double",
+    "name": "Air_temperature_K", "required": true}, {"type": "double", "name": "Process_temperature_K",
+    "required": true}, {"type": "long", "name": "Rotational_speed_rpm", "required":
+    true}, {"type": "double", "name": "Torque_Nm", "required": true}, {"type": "long",
+    "name": "Tool_wear_min", "required": true}, {"type": "double", "name": "Mechanical_power_W",
+    "required": true}, {"type": "double", "name": "Temperature_difference_K", "required":
+    true}, {"type": "double", "name": "Torque_wear", "required": true}, {"type": "long",
+    "name": "Speed_wear", "required": true}, {"type": "double", "name": "Power_wear",
+    "required": true}]'
+  outputs: '[{"type": "double", "name": "failure_probability", "required": true},
+    {"type": "long", "name": "predicted_failure", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-10-23 01:47:55.056176'
