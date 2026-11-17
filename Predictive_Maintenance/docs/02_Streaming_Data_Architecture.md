@@ -129,7 +129,7 @@ The Auto Loader is configured with:
 
 This design allows new CSV batches to be processed without manually restarting or executing the downstream notebooks.
 
-![auto_loader.png](../pics/auto_loader.png "auto_loader.png")
+![auto_loader.png](pics/auto_loader.png "auto_loader.png")
 <p align="center"><i>Fig 1: auto loader. A pipeline by itself. Not connected to the main lakeflow pipeline </i></p>
 
 ## 3. Job B — Main Lakeflow Processing Pipeline
@@ -232,7 +232,7 @@ The prediction table includes:
 The selected model uses an optimized classification threshold of approximately **0.004751**, established during validation.
 
 The ground-truth `Machine_failure` label is excluded from model inputs to prevent target leakage.
-![LakeflowProcessingPipeline.png](../pics/LakeflowProcessingPipeline.png "LakeflowProcessingPipeline.png")
+![LakeflowProcessingPipeline.png](pics/LakeflowProcessingPipeline.png "LakeflowProcessingPipeline.png")
 <p align="center"><i>Fig 12: Lakeflow Processing Pipeline.  </i></p>
 
 ## 4. Incremental Processing and Checkpointing

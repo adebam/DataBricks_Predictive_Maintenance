@@ -16,9 +16,7 @@ drift monitoring, alert generation, and dashboard development.
 The intended application prioritizes identifying failures while keeping
 unnecessary maintenance alerts manageable. Because failures are
 relatively rare, overall accuracy is not sufficient for model
-evaluation. The modeling workflow emphasizes recall, precision, F2
-score, and alert rate.
-
+evaluation. The modeling workflow emphasizes recall first, then F2 score, then alert rate. 
 The deployment is configured in two parts:
 
 1. **Batch Deployment (Databricks):** Input data is uploaded in batches of CSV files to a landing volume. Databricks Auto Loader ingests the files, and Lakeflow Jobs orchestrate processing through the Bronze, Silver, and Gold layers before generating predictions using the trained MLflow model. Prediction and drift monitoring are also automated.  
@@ -27,6 +25,7 @@ The deployment is configured in two parts:
 
 2. **On-Demand Deployment (FastAPI + Streamlit):** A separate application allows users to enter individual machine operating conditions and obtain immediate failure predictions through a Streamlit interface powered by a FastAPI prediction service.  
    - [Source Code](https://github.com/adebam/DataBricks_Predictive_Maintenance/tree/feature/predictive-maintenance-on-demand/apps/Predictive_Maintenance_on_demand)
+   - [Live Dashboard](https://pm.adebam.net/predict)
   
 ## The Business Case: Turning Equipment Data into Actionable Maintenance Decisions
 <p align="center">
