@@ -137,6 +137,12 @@ Design](Predictive_Maintenance/docs/05_CI_CD_Architecture_and_Production_Governa
 for the detailed workflow diagrams, security findings, and proposed
 production release process.
 
+## On-demand inference application
+
+A separate FastAPI and Streamlit application provides on-demand machine failure prediction using the exported MLflow model.
+
+See the [On-Demand Predictive Maintenance Application](apps/Predictive_Maintenance_on_demand/README.md) for its architecture, installation, API endpoints, and startup instructions.
+
 ## Project documentation
 
 -   [Dataset and data

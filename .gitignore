@@ -1,2 +1,29 @@
 # MLflow experiments are workspace objects, not files — Git cannot track them
 Predictive_Maintenance/00_Machine_failure_exp
+# Python environments
+.venv/
+venv/
+
+# Python cache
+**/__pycache__/
+.pytest_cache/
+
+# Jupyter checkpoints
+**/.ipynb_checkpoints/
+
+# Environment secrets
+.env
+
+# Exported MLflow model artifacts
+AWS_Fast_API_Streamlit_deployment/pm_hgb_model_export.zip
+
+# On-demand application: local-only files
+apps/Predictive_Maintenance_on_demand/mlflow.db
+apps/Predictive_Maintenance_on_demand/*.bak
+apps/Predictive_Maintenance_on_demand/*.before_*
+apps/Predictive_Maintenance_on_demand/data/*.csv
+apps/Predictive_Maintenance_on_demand/data/*.ipynb
+apps/Predictive_Maintenance_on_demand/data/.virtual_documents/
+
+# Exploratory deployment notebook
+AWS_Fast_API_Streamlit_deployment/Boto3.ipynb
