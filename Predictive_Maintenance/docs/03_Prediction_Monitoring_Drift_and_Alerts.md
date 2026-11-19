@@ -250,7 +250,6 @@ The notebook first maps PSI categories to `NORMAL`, `WARNING`, and `HIGH`, then 
 | OPEN | First consecutive NORMAL window | `RECOVERY_PENDING` | No |
 | RECOVERY_PENDING | Second consecutive NORMAL window | `RESOLVED` | Yes |
 | RECOVERY_PENDING | WARNING or HIGH | `REOPENED` | Yes |
-| RESOLVED | Another NORMAL window | `RESOLVED_CONTINUING` | No |
 
 Two consecutive normal monitoring windows are required before an active drift alert is resolved. This reduces notification noise from one-off changes in PSI.
 
@@ -273,9 +272,7 @@ The following query preserves a descriptive **no-pending-events** row when the e
 ```sql
 WITH pending_events AS (
     SELECT
-        event_id,
         feature,
-        event_type,
         severity,
         ROUND(psi, 4) AS psi,
         ks_pvalue,
@@ -286,15 +283,15 @@ WITH pending_events AS (
       AND notification_status = 'PENDING'
 )
 SELECT
-    event_id, feature, event_type, severity, psi, ks_pvalue,
+    feature, severity, psi, ks_pvalue,
     recommended_action, event_timestamp,
     1 AS has_pending_event
 FROM pending_events
+
 UNION ALL
+
 SELECT
-    NULL AS event_id,
     '(no pending drift events)' AS feature,
-    'NONE' AS event_type,
     'NONE' AS severity,
     0.0 AS psi,
     CAST(NULL AS DOUBLE) AS ks_pvalue,
@@ -302,6 +299,7 @@ SELECT
     current_timestamp() AS event_timestamp,
     0 AS has_pending_event
 WHERE NOT EXISTS (SELECT 1 FROM pending_events)
+
 ORDER BY has_pending_event DESC, psi DESC;
 ```
 
@@ -311,32 +309,11 @@ Configure the SQL Alert condition as **first row of `has_pending_event` > 0** (w
 
 ### Notification lifecycle and scheduling
 
-The saved SQL Alert uses `0 0/10 * * * ?` in `America/Chicago`: every ten minutes.
-Its condition is `has_pending_event > 0`; low-PSI recovery events can trigger it,
-and the fallback row cannot. Repeated native notifications are enabled for each
-matching evaluation so an earlier pending event does not prevent later events
-from being reported.
+The notebook references a Databricks SQL Alert named `60_Predictive_Maintenance_Alert`, evaluated every **10 minutes**. Its notification-maintenance step uses a **one-hour grace period** before changing older `PENDING` events to `SENT` and updating notification timestamps.
 
-Automated delivery with acknowledgements is implemented by
-[`services/alert_delivery`](../../services/alert_delivery/README.md). The EC2 worker
-sends through SES, consumes delivery receipts through a private SNS/SQS queue, and
-keeps a durable SQLite journal of attempts and receipts. Only a matching SES
-`Delivery` receipt for the configured mailbox permits the exact included event
-IDs to change from `PENDING` to `SENT`. This means delivery to the recipient's mail
-server, not proof that the user read the message.
+This delay is intended to give the scheduled SQL Alert time to evaluate the pending events before they are retired. It does **not** verify actual email delivery: `SENT` means the notebook advanced the event's notification status after the grace period.
 
-Notebook 51 never retires notifications by age. API acceptance, monitoring success,
-and SQL Alert evaluation are not delivery acknowledgements. Failed/unconfirmed
-notifications remain pending, and database acknowledgement failures are retried
-from the journal. Bounces and permanent failures remain pending for operator
-remediation. A stable resolved state does not emit repeated recovery events.
-
-When the worker is enabled, pause the native SQL Alert or remove its email
-subscribers to avoid duplicate, untracked messages. The worker polls independently
-every ten minutes. The SQL alert remains available as a pending-event monitor.
-Deploy and validate the receipt infrastructure, dedicated service credentials,
-and real DEV email delivery before production; pushing a Git branch alone does
-not provision or start this service.
+The SQL Alert's schedule, subscribers, and repeat-notification behavior are configured in Databricks, separately from the notebook. These settings should be checked after deployment to confirm that new events are reported even when an earlier alert remains active.
 
 ## 4. Monitoring Tables Summary
 
@@ -358,7 +335,7 @@ not provision or start this service.
 - **Reference drift is not the same as model-performance drift.** PSI and KS measure changes in feature distributions; they do not directly measure a decline in recall or F2.
 - **Window support matters.** The `LOW_FAILURE_SUPPORT` flag cautions against overinterpreting recall from a small number of failures.
 - **Repeated runs are controlled.** Delta `MERGE` operations and deterministic run/event identifiers reduce duplicate monitoring records, though they do not replace upstream UDI uniqueness requirements.
-- **Notification statuses require receipts.** New `SENT` updates come only from confirmed SES delivery receipts. Historical `SENT` rows produced by the old timer remain unverified and require separate review; the patch does not reset them.
+- **Notification statuses require care.** The current one-hour retirement mechanism is an operational approximation, not an acknowledgment from the email service.
 
 ## Summary
 
