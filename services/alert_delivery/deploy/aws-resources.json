@@ -1,0 +1,283 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Predictive maintenance delivery receipts; create separately for DEV and production. Does not attach IAM permissions or start a worker.",
+  "Parameters": {
+    "ConfigurationSetName": {
+      "Type": "String",
+      "AllowedPattern": "[A-Za-z0-9_-]{1,64}"
+    },
+    "VerifiedSesIdentity": {
+      "Type": "String",
+      "Description": "Existing SES-verified domain or sender email in this region"
+    },
+    "SenderEmail": {
+      "Type": "String",
+      "Description": "Verified sending address"
+    },
+    "RecipientEmail": {
+      "Type": "String",
+      "Description": "Single operator mailbox (verify in SES sandbox)"
+    }
+  },
+  "Resources": {
+    "ConfigurationSet": {
+      "Type": "AWS::SES::ConfigurationSet",
+      "Properties": {
+        "Name": {
+          "Ref": "ConfigurationSetName"
+        }
+      }
+    },
+    "ReceiptTopic": {
+      "Type": "AWS::SNS::Topic"
+    },
+    "ReceiptTopicPolicy": {
+      "Type": "AWS::SNS::TopicPolicy",
+      "Properties": {
+        "Topics": [
+          {
+            "Ref": "ReceiptTopic"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ses.amazonaws.com"
+              },
+              "Action": "sns:Publish",
+              "Resource": {
+                "Ref": "ReceiptTopic"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "AWS:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  },
+                  "AWS:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/${ConfigurationSetName}"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "EventDestination": {
+      "Type": "AWS::SES::ConfigurationSetEventDestination",
+      "DependsOn": [
+        "ReceiptTopicPolicy",
+        "ReceiptSubscription"
+      ],
+      "Properties": {
+        "ConfigurationSetName": {
+          "Ref": "ConfigurationSet"
+        },
+        "EventDestination": {
+          "Name": "delivery-receipts",
+          "Enabled": true,
+          "MatchingEventTypes": [
+            "DELIVERY",
+            "BOUNCE",
+            "COMPLAINT",
+            "REJECT",
+            "RENDERING_FAILURE"
+          ],
+          "SnsDestination": {
+            "TopicARN": {
+              "Ref": "ReceiptTopic"
+            }
+          }
+        }
+      }
+    },
+    "ReceiptDeadLetterQueue": {
+      "Type": "AWS::SQS::Queue",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "SqsManagedSseEnabled": true
+      }
+    },
+    "ReceiptQueue": {
+      "Type": "AWS::SQS::Queue",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "MessageRetentionPeriod": 1209600,
+        "VisibilityTimeout": 120,
+        "SqsManagedSseEnabled": true,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "ReceiptDeadLetterQueue",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 5
+        }
+      }
+    },
+    "ReceiptQueuePolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "ReceiptQueue"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sns.amazonaws.com"
+              },
+              "Action": "sqs:SendMessage",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ReceiptQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Ref": "ReceiptTopic"
+                  }
+                },
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ReceiptSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "DependsOn": "ReceiptQueuePolicy",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "ReceiptTopic"
+        },
+        "Protocol": "sqs",
+        "Endpoint": {
+          "Fn::GetAtt": [
+            "ReceiptQueue",
+            "Arn"
+          ]
+        },
+        "RawMessageDelivery": true
+      }
+    },
+    "WorkerPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description": "SES sends for one sender/recipient and consumption of this receipt queue only",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ses:SendEmail"
+              ],
+              "Resource": [
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/${VerifiedSesIdentity}"
+                },
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:configuration-set/${ConfigurationSetName}"
+                }
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "ses:FromAddress": {
+                    "Ref": "SenderEmail"
+                  }
+                },
+                "ForAllValues:StringEquals": {
+                  "ses:Recipients": [
+                    {
+                      "Ref": "RecipientEmail"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueAttributes"
+              ],
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ReceiptQueue",
+                  "Arn"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "DeadLetterAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Investigate rejected or unprocessed SES delivery receipts. Add an operations AlarmAction during deployment.",
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "ReceiptDeadLetterQueue",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 0,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    }
+  },
+  "Outputs": {
+    "ConfigurationSetName": {
+      "Value": {
+        "Ref": "ConfigurationSet"
+      }
+    },
+    "ReceiptQueueUrl": {
+      "Value": {
+        "Ref": "ReceiptQueue"
+      }
+    },
+    "ReceiptDeadLetterQueueUrl": {
+      "Value": {
+        "Ref": "ReceiptDeadLetterQueue"
+      }
+    },
+    "WorkerPolicyArn": {
+      "Value": {
+        "Ref": "WorkerPolicy"
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+.env
+*.sqlite3
+*.sqlite3-*
+*.lock
+__pycache__/
+.venv/

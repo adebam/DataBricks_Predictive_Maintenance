@@ -1,0 +1,26 @@
+[Unit]
+Description=Predictive maintenance alert delivery and receipt tracking
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pm-alert-delivery
+Group=pm-alert-delivery
+EnvironmentFile=/etc/pm-alert-delivery.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+WorkingDirectory=/opt/pm-alert-delivery
+ExecStart=/opt/pm-alert-delivery/venv/bin/python /opt/pm-alert-delivery/worker.py
+Restart=on-failure
+RestartSec=30
+StateDirectory=pm-alert-delivery
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/pm-alert-delivery
+
+[Install]
+WantedBy=multi-user.target
