@@ -25,7 +25,7 @@ resources:
           notebook_task:
 
             # Location of Notebook 33 relative to this YAML file
-            notebook_path: ../Predictive_Maintenance/notebooks/33_Test Data_Gold _MLflowPrediction.ipynb
+            notebook_path: ../Predictive_Maintenance/notebooks/33_Test_Data_Gold_MLflowPrediction.ipynb
 
             # Parameters passed to the notebook at execution time
             base_parameters:
