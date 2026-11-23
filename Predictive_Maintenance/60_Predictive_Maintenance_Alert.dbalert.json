@@ -9,12 +9,12 @@
     "comparison_operator": "GREATER_THAN",
     "threshold": {
       "value": {
-        "double_value": 0
+        "double_value": 0.0
       }
     },
     "notification": {
-      "notify_on_ok": false,
-      "retrigger_seconds": 1
+      "retrigger_seconds": 1,
+      "notify_on_ok": false
     }
   },
   "schedule": {
@@ -32,7 +32,7 @@
     "        ks_pvalue,",
     "        recommended_action,",
     "        event_timestamp",
-    "    FROM predictivemaintenancecatalog.gold_data.prediction_monitoring_drift_alert_events",
+    "    FROM predictivemaintenance_dev.gold_data.prediction_monitoring_drift_alert_events",
     "    WHERE notification_required = TRUE",
     "      AND notification_status = 'PENDING'",
     ")",
