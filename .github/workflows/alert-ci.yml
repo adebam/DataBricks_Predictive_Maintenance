@@ -1,0 +1,45 @@
+name: Alert Delivery CI
+
+on:
+  pull_request:
+    paths:
+      - 'Predictive_Maintenance/notebooks/51_Data_Drift_Monitoring.ipynb'
+      - 'Predictive_Maintenance/60_Predictive_Maintenance_Alert.dbalert.json'
+      - 'services/alert_delivery/**'
+      - '.github/workflows/alert-ci.yml'
+  push:
+    branches: [main, 'feature/**', 'codex/**']
+    paths:
+      - 'Predictive_Maintenance/notebooks/51_Data_Drift_Monitoring.ipynb'
+      - 'Predictive_Maintenance/60_Predictive_Maintenance_Alert.dbalert.json'
+      - 'services/alert_delivery/**'
+      - '.github/workflows/alert-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SPARK_LOCAL_IP: '127.0.0.1'
+      PYSPARK_PYTHON: python3
+      PYTHONDONTWRITEBYTECODE: '1'
+      AWS_EC2_METADATA_DISABLED: 'true'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install local test dependencies
+        run: python -m pip install 'pytest>=8,<10' 'pyspark==4.1.1' 'boto3>=1.35,<2' 'cfn-lint>=1,<2'
+      - name: Validate AWS resource definitions
+        run: cfn-lint services/alert_delivery/deploy/aws-resources.json
+      - name: Test alert SQL, notebook lifecycle and delivery recovery offline
+        run: python -m pytest -q services/alert_delivery/tests
